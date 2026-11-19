@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#20382c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Marguerites">
+<title>Les Marguerites du Vieux</title>
+<style>
+:root{--cream:#f3efe3;--paper:#fbf6e9;--green:#20382c;--green2:#2d4d3b;--orange:#e9a44c;--rust:#aa471f;--ink:#20382c;--muted:#6b6f5e}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:1240px;margin:0 auto;padding:16px 20px 28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px}
+.brand{font-weight:900;letter-spacing:.08em;font-size:.8rem}.brand span{color:var(--rust);margin-right:6px}
+header a{color:inherit;font-size:.82rem;text-underline-offset:3px}
+h1{font-family:Georgia,serif;letter-spacing:-.04em;font-size:clamp(1.6rem,4vw,2.6rem);margin:0 0 12px}
+#stage{position:relative;width:100%;aspect-ratio:16/9;background:#14251c;border-radius:16px;overflow:hidden;box-shadow:0 18px 40px #1b2d2230;user-select:none;-webkit-user-select:none}
+#game{position:relative}
+#game:fullscreen{background:#000;display:grid;place-items:center}
+#game:fullscreen #stage{width:min(100vw,177.7vh);border-radius:0}
+canvas#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.corner{position:absolute;top:10px;z-index:6;width:38px;height:38px;border-radius:50%;border:0;background:#14251cb0;color:#fff4dc;font:700 15px system-ui;cursor:pointer;display:none}
+#btnPause{right:1.4%;top:2.4%}#btnFull{right:calc(1.4% + 46px);top:2.4%;z-index:60}
+#game.pseudoFull{position:fixed;inset:0;z-index:1000;background:#000;display:grid;place-items:center}
+#game.pseudoFull #stage{width:min(100vw,177.7vh);border-radius:0}
+body.pseudoFullOn{overflow:hidden}
+body.touch .corner,.corner.show{display:block}
+@media (hover:hover){.corner{display:block;opacity:.65}.corner:hover{opacity:1}}
+
+/* superpositions */
+.ov{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:18px;overflow:auto;background:linear-gradient(120deg,#14251cf0,#14251cb8 55%,#14251c66)}
+.ov[hidden]{display:none}
+.panel{width:min(100%,520px);background:var(--paper);color:var(--ink);border-radius:18px;padding:22px 24px;box-shadow:0 20px 50px #0006;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+.panel.wide{width:min(100%,880px);display:flex;flex-direction:column}
+.ov .panel{max-height:100%;overflow:auto}
+.panel.wide .cards,.panel.wide .pages{flex:1;min-height:0;max-height:none}
+.panel.wide h2{font-size:1.6rem}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.kicker{font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;font-weight:800;color:var(--rust)}
+.panel h2{font-family:Georgia,serif;font-size:clamp(1.5rem,3.4vw,2.3rem);line-height:1.02;letter-spacing:-.03em;margin:.15em 0 .35em}
+.panel p{margin:.3em 0 .8em}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{font:inherit;font-weight:800;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;background:var(--orange);color:#272b21;transition:transform .08s,filter .15s}
+button:hover{filter:brightness(1.06)}button:active{transform:scale(.97)}
+button:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+button.alt{background:#e4e3d2;color:var(--ink)}
+button.ghost{background:transparent;color:inherit;border:2px solid currentColor;opacity:.85}
+button:disabled{opacity:.45;cursor:default;filter:none}
+
+/* titre */
+#ovTitle{background:linear-gradient(90deg,#14251cf2,#14251cb0 45%,#14251c00 75%);place-items:center start;padding-left:6%}
+.title{max-width:430px;color:#fff8e8;animation:pop .5s}
+.title .kicker{color:var(--orange)}
+.title h2{font-family:Georgia,serif;font-size:clamp(2rem,6vw,4.1rem);line-height:.92;letter-spacing:-.045em;margin:.12em 0 .3em}
+.title p{color:#e4ead8;max-width:360px}
+.title .actions{flex-direction:column;align-items:flex-start}
+.title button.ghost{color:#fff4dc}
+
+/* résultats */
+.stars{display:flex;gap:10px;margin:8px 0 14px}
+.star{flex:1;text-align:center;background:#ece6d2;border-radius:12px;padding:8px 4px;opacity:.45;font-size:.72rem;line-height:1.2}
+.star span{display:block;font-size:2rem;color:#b5ab90}
+.star.on{opacity:1;background:#fff0cf;animation:starIn .5s both}
+.star.on span{color:var(--orange)}
+@keyframes starIn{from{transform:scale(.4) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+.stats{display:grid;gap:6px;margin:6px 0}
+.stats div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #d8d1bb;padding:4px 0}
+.stats span{color:var(--muted)}.stats em{font-style:normal;font-weight:600;color:var(--rust);margin-left:8px;font-size:.85em}
+.newgear{display:flex;gap:14px;align-items:center;background:#20382c;color:#fff4dc;border-radius:14px;padding:10px 14px;margin:12px 0 4px;animation:pop .5s .6s both}
+.newgear canvas{width:96px;height:80px;background:#fbf1d8;border-radius:10px;flex:none}
+.newgear p{margin:.2em 0;font-size:.9rem}.newgear small{color:#cdd8c3}
+.newgear .kicker{color:var(--orange)}
+
+/* carnet */
+.tabs{display:flex;gap:6px;margin:8px 0 12px}
+.tabs button{background:#e4e3d2;color:var(--ink);padding:8px 14px}
+.tabs button[aria-selected=true]{background:var(--green);color:#fff4dc}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;max-height:min(62vh,520px);overflow:auto;padding-right:4px}
+.card{background:#efe7d0;border:1px solid #d8cba8;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.card canvas{width:100%;height:76px;background:#fbf1d8;border-radius:8px;margin-bottom:6px}
+.card small{color:var(--muted);font-size:.78rem}.card p{margin:.3em 0 0;font-size:.82rem}.card .tip{font-style:italic;color:#5b4a2f}
+.card.locked{opacity:.75}
+.pages{max-height:min(62vh,520px);overflow:auto;padding-right:6px}
+.pages h4{font-family:Georgia,serif;margin:14px 0 6px;font-size:1.05rem}
+.pg{display:flex;gap:10px;align-items:flex-start;background:#fbf1d8;border-radius:10px;padding:8px 10px;margin:5px 0}
+.pg span{flex:none;width:28px;height:28px;border-radius:50%;background:var(--orange);display:grid;place-items:center;font-weight:800;font-size:.85rem}
+.pg p{margin:2px 0;font-size:.92rem}
+.pg.missing{background:#ebe5d3;color:var(--muted)}.pg.missing span{background:#cfc8b4}
+.count{font-weight:700;color:var(--rust);font-size:.9rem}
+
+/* boutique */
+.bank{font-weight:900;font-size:1.3rem;color:var(--rust)}
+.items{display:grid;gap:8px;margin:12px 0}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#efe7d0;border-radius:12px;padding:10px 12px}
+.item p{margin:0;font-size:.88rem;color:var(--muted)}.item.own{background:#dfe8d6}
+
+/* carte */
+#mapPanel{position:absolute;right:16px;bottom:16px;z-index:5;width:min(330px,calc(100% - 32px));background:#fbf6e9f2;border-radius:16px;padding:14px 16px;box-shadow:0 10px 30px #0003}
+#mapPanel[hidden]{display:none}
+#mapPanel h3{font-family:Georgia,serif;margin:.1em 0 .2em;font-size:1.35rem;letter-spacing:-.02em}
+#mapPanel .info{font-size:.9rem;color:var(--muted);min-height:1.4em}
+#mapPanel .info .dim{opacity:.3}
+#mapPanel .actions{margin-top:10px}
+#mapPanel .actions button{padding:8px 11px;font-size:.86rem}
+#mapPanel .actions{flex-wrap:nowrap}
+
+/* tactile */
+#touch{display:none;position:absolute;inset:auto 0 0 0;z-index:4;pointer-events:none;justify-content:space-between;padding:0 14px 14px}
+body.touch.playing #touch{display:flex}
+#touch .grp{display:flex;gap:10px;pointer-events:auto;align-items:flex-end}
+#touch button{width:64px;height:64px;border-radius:50%;background:#fff8e83a;color:#fff;font-size:1.4rem;border:2px solid #ffffff55;backdrop-filter:blur(2px);touch-action:none}
+#touch button.big{width:78px;height:78px;background:#e9a44c88}
+#touch button.on{background:#e9a44ccc;transform:scale(.94)}
+#touch button small{display:block;font-size:.6rem;font-weight:700}
+.help{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 2px 0;font-size:.86rem;color:var(--muted)}
+.help kbd{font:700 .78rem system-ui;background:#e4e3d2;border-radius:5px;padding:1px 6px;color:var(--ink)}
+footer{margin-top:16px;font-size:.78rem;color:var(--muted)}
+
+#regionTabs{position:absolute;top:10px;right:110px;z-index:6;display:flex;gap:4px;background:#20382ce6;padding:4px;border-radius:12px}
+#regionTabs button{background:transparent;color:#fff4dc;padding:7px 12px;font-size:.85rem;white-space:nowrap}
+#regionTabs button[aria-selected=true]{background:var(--orange);color:#272b21}
+.new{background:#aa471f;color:#fff;border-radius:6px;padding:1px 6px;font-size:.7rem;margin-left:4px;vertical-align:middle}
+#game{max-width:calc((100vh - 140px) * 16 / 9);margin:0 auto}
+#confetti{position:absolute;inset:0;pointer-events:none;z-index:20;overflow:hidden}
+#confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{top:110%;transform:rotate(720deg) translateX(40px)}}
+.achs{display:grid;gap:6px;margin:6px 0}
+.ach{display:flex;gap:10px;align-items:center;background:#20382c;color:#fff4dc;border-radius:10px;padding:6px 10px;animation:pop .5s .5s both}
+.ach span{color:#f2c230;font-size:1.3rem}.ach b{display:block}.ach small{color:#cdd8c3}
+.regionBtn{margin-top:8px;width:100%;background:#20382c;color:#fff4dc;padding:8px 10px;font-size:.85rem}
+.daily{margin-top:8px;background:#fff0cf;border:2px dashed #e9a44c;border-radius:10px;padding:8px 10px;font-size:.82rem;cursor:pointer}
+.daily:hover{background:#ffe7b5}.daily b{color:var(--rust);display:block}
+.medal{display:inline-block;border-radius:20px;padding:0 9px;font-size:.8rem;font-weight:800;color:#272b21}
+.medal.m1{background:#d9a47a}.medal.m2{background:#d7dde2}.medal.m3{background:#f2c230}
+.levelup{background:#20382c;color:#fff4dc;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.95rem;animation:pop .5s .4s both}
+.levelup b{color:var(--orange)}
+.quiz{background:#efe7d0;border-radius:12px;padding:10px 12px;margin:10px 0}
+.quiz p{margin:.2em 0 .5em;font-weight:700}
+.quiz .opts{display:grid;gap:6px}.quiz .opts button{text-align:left;padding:8px 10px;font-weight:600}
+.quiz button.good{background:#bfe3a8;opacity:1}.quiz button.bad{background:#f2b8b0;opacity:1}
+.animals{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;overflow:auto;flex:1;min-height:0}
+.animal{background:#fbf1d8;border-radius:10px;padding:10px}.animal.missing{background:#ebe5d3;color:var(--muted)}
+.animal strong{display:block}.animal p{margin:.3em 0 0;font-size:.85rem}
+.card a{font-size:.8rem;font-weight:700;color:var(--rust);margin-top:4px}
+.code{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0;font-size:.9rem}
+.code input{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #cfc8b4;width:150px;text-transform:uppercase}
+#codeMsg{font-weight:700;color:var(--rust)}
+@media (max-width:760px){
+  #regionTabs{top:6px;font-size:.75rem}#regionTabs button{padding:5px 8px;font-size:.72rem}
+  #game{max-width:none}
+  #regionTabs{right:auto;left:8px;top:auto;bottom:8px}
+  main{padding:8px 8px 20px}
+  header{padding-bottom:6px}
+  h1{font-size:1.4rem;margin-bottom:8px}
+  #stage{border-radius:10px}
+  .ov{position:fixed;z-index:50;background:#14251cf2}
+  #ovTitle{place-items:center;padding:18px;background:#14251cf4}
+  .title h2{font-size:2.3rem}
+  #mapPanel{position:static;width:auto;margin-top:8px;border-radius:12px}
+  #game:fullscreen #mapPanel,#game.pseudoFull #mapPanel{position:absolute;width:300px}
+  .help{display:none}
+}
+@media (orientation:portrait) and (max-width:760px){
+  body.touch.playing #touch{position:static;display:flex;padding:12px 4px;background:none}
+  body.touch #touch button{background:#20382c;color:#fff4dc;border:0}
+  body.touch #touch button.big{background:var(--orange);color:#272b21}
+}
+@media (orientation:landscape) and (max-height:520px){
+  header,h1,.help,footer{display:none}
+  main{padding:0;max-width:none}
+  #stage{width:min(100vw,177.7vh);margin:0 auto;border-radius:0}
+  #mapPanel{position:absolute;right:10px;bottom:10px;width:280px;margin:0;padding:10px 12px}
+  #mapPanel h3{font-size:1.1rem}
+  .ov{position:absolute}
+}
+@media (prefers-reduced-motion:reduce){.panel,.star.on,.newgear{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand"><span>✿</span> AU VIEUX CAMPEUR</div>
+    <a href="https://www.auvieuxcampeur.fr/" target="_blank" rel="noopener">auvieuxcampeur.fr ↗</a>
+  </header>
+  <h1>Les Marguerites du Vieux</h1>
+
+  <div id="game">
+  <div id="stage">
+    <div id="confetti" aria-hidden="true"></div>
+    <canvas id="view" width="960" height="540" aria-label="Jeu de plateforme : Les Marguerites du Vieux"></canvas>
+    <button id="btnPause" class="corner" aria-label="Pause">II</button>
+    <button id="btnFull" class="corner" aria-label="Plein écran">⛶</button>
+
+    <section class="ov" id="ovTitle" hidden>
+      <div class="title">
+        <div class="kicker">Une aventure Au Vieux Campeur</div>
+        <h2>Les Marguerites du Vieux</h2>
+        <p>La Bise a emporté les 42 pages du carnet du Vieux. Randonnée, VTT, spéléo, escalade, trail, parapente, kayak, plongée, alpinisme, ski, snowboard : 14 étapes de la forêt à la mer, jusqu'aux glaciers.</p>
+        <div class="actions">
+          <button id="tPlay">Commencer l'aventure →</button>
+          <button id="tNew" class="ghost" hidden>Nouvelle partie</button>
+          <button id="tCarnet" class="ghost">Le carnet du Vieux</button>
+          <button class="ghost muteBtn"><span class="muteLabel">Son : activé</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovPause" hidden>
+      <div class="panel">
+        <div class="kicker">Pause</div>
+        <h2>On souffle un peu</h2>
+        <p>← → marcher · Espace ou ↑ sauter (deux fois avec les bâtons) · X ou Maj : corde, sonnette, sprint, figures · R : recommencer · Échap : pause · M : son</p>
+        <div class="actions">
+          <button id="pResume" data-back>Reprendre</button>
+          <button id="pRestart" class="alt">Recommencer l'étape</button>
+          <button id="pCarnet" class="alt">Carnet</button>
+          <button id="pMap" class="alt">Carte</button>
+          <button class="alt muteBtn"><span class="muteLabel">Son : activé</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovResults" hidden>
+      <div class="panel">
+        <div class="kicker">Étape</div>
+        <h2>…</h2>
+        <div class="stars"></div>
+        <div class="stats"></div>
+        <div class="levelup" hidden></div>
+        <div class="achs"></div>
+        <div class="newgear" hidden>
+          <canvas width="120" height="100"></canvas>
+          <div><div class="kicker">Nouvelle carte</div><strong></strong><p></p><small></small></div>
+        </div>
+        <div class="quiz" hidden></div>
+        <div class="actions">
+          <button id="resNext">Retour à la carte →</button>
+          <button id="resRetry" class="alt">Rejouer (R)</button>
+          <button id="resShare" class="alt">Partager mon temps</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovFail" hidden>
+      <div class="panel">
+        <div class="kicker">Aïe</div>
+        <h2>Épuisé !</h2>
+        <p></p>
+        <div class="actions">
+          <button id="failCairn">Reprendre au dernier cairn</button>
+          <button id="failRestart" class="alt">Recommencer l'étape</button>
+          <button id="failMap" class="alt">Carte</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovCarnet" hidden>
+      <div class="panel wide">
+        <div class="kicker">Le carnet du Vieux</div>
+        <h2>Matériel et conseils</h2>
+        <div class="count"></div>
+        <div class="tabs" role="tablist">
+          <button data-tab="gear" role="tab" aria-selected="true">Cartes de matériel</button>
+          <button data-tab="pages" role="tab" aria-selected="false">Pages de conseils</button>
+          <button data-tab="animals" role="tab" aria-selected="false">Carnet naturaliste</button>
+          <button data-tab="ach" role="tab" aria-selected="false">Succès</button>
+        </div>
+        <div class="cards"></div>
+        <div class="pages" hidden></div>
+        <div class="animals" hidden></div>
+        <div class="animals achlist" hidden></div>
+        <div class="actions"><button id="carnetClose" data-back>Fermer</button></div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovShop" hidden>
+      <div class="panel">
+        <div class="kicker">Paris · Quartier latin</div>
+        <h2>La boutique du Vieux</h2>
+        <p>Les pâquerettes que tu ramasses ici servent de monnaie. Tu as <span class="bank">0 ✿</span></p>
+        <div class="items"></div>
+        <form id="codeForm" class="code"><label for="codeIn">Un code magasin ?</label><input id="codeIn" autocomplete="off" placeholder="VIEUX-…" maxlength="24"><button class="alt">Valider</button><span id="codeMsg"></span></form>
+        <div class="actions"><button id="shopClose" data-back>Retour à la carte</button></div>
+      </div>
+    </section>
+
+    <section class="ov" id="ovEnd" hidden>
+      <div class="panel">
+        <div class="kicker">Fin</div>
+        <h2>La montagne, ça se partage.</h2>
+        <p>Merci d'avoir accompagné le Vieux. Il reste peut-être des pages cachées : avec tout ton matériel, retourne explorer les étapes déjà parcourues.</p>
+        <div class="stats"></div>
+        <div class="actions"><button id="endMap">Retour à la carte →</button><button class="alt muteBtn"><span class="muteLabel">Son : activé</span></button></div>
+      </div>
+    </section>
+  </div>
+    <div id="mapPanel" hidden>
+      <div class="kicker">Étape</div>
+      <h3>…</h3>
+      <div class="info"></div>
+      <div class="actions">
+        <button id="mapPlay">Partir →</button>
+        <button id="mapCarnet" class="alt">Carnet</button>
+        <button id="mapShop" class="alt">Boutique</button>
+        <button id="mapTitle" class="alt" aria-label="Menu">☰</button>
+      </div>
+      <button id="mapRegion" class="regionBtn">Le Défi des Saisons ⇄</button>
+      <div id="mapDaily" class="daily" role="button" tabindex="0" hidden></div>
+    </div>
+
+    <div id="touch" aria-hidden="true">
+      <div class="grp"><button data-act="l">◀</button><button data-act="r">▶</button><button data-act="d" style="width:48px;height:48px;font-size:1rem">▼</button></div>
+      <div class="grp"><button data-act="act"><small>CORDE</small>✋</button><button data-act="jump" class="big"><small>SAUT</small>▲</button></div>
+    </div>
+
+  </div>
+
+  <div class="help">
+    <span><kbd>←</kbd> <kbd>→</kbd> marcher</span>
+    <span><kbd>Espace</kbd> ou <kbd>↑</kbd> sauter</span>
+    <span><kbd>X</kbd> ou <kbd>Maj</kbd> action</span>
+    <span><kbd>R</kbd> recommencer</span>
+    <span><kbd>Échap</kbd> pause</span>
+    <span><kbd>M</kbd> son</span>
+    <span>Manette compatible</span>
+  </div>
+  <footer>Sur téléphone : ajoute le jeu à ton écran d'accueil (Safari : Partager, puis « Sur l'écran d'accueil ») pour y jouer en plein écran, même sans réseau. La progression est enregistrée sur cet appareil.</footer>
+</main>
+<script src="core.js"></script>
+<script src="levels.js"></script>
+<script src="data.js"></script>
+<script src="saisons.js"></script>
+<script src="ete.js"></script>
+<script src="audio.js"></script>
+<script src="render.js"></script>
+<script src="render2.js"></script>
+<script src="map.js"></script>
+<script src="render3.js"></script>
+<script src="game.js"></script>
+<script>if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>
