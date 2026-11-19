@@ -174,9 +174,12 @@ footer{margin-top:16px;font-size:.78rem;color:var(--muted)}
   body.touch #touch button.big{background:var(--orange);color:#272b21}
 }
 @media (orientation:landscape) and (max-height:520px){
+  html,body{background:#000;height:100%;overflow:hidden}
   header,h1,.help,footer{display:none}
-  main{padding:0;max-width:none}
-  #stage{width:min(100vw,177.7vh);margin:0 auto;border-radius:0}
+  main{padding:0;max-width:none;height:100vh;height:100dvh;display:flex;flex-direction:column;justify-content:center}
+  #game{width:100%;flex:none;max-width:none}
+  .title h2{font-size:1.9rem}.title p{font-size:.85rem;margin:.3em 0 .6em}
+  #stage{width:min(100vw,177.7vh);width:min(100vw,177.7dvh);margin:0 auto;border-radius:0;box-shadow:none}
   #mapPanel{position:absolute;right:10px;bottom:10px;width:280px;margin:0;padding:10px 12px}
   #mapPanel h3{font-size:1.1rem}
   .ov{position:absolute}
@@ -203,7 +206,7 @@ footer{margin-top:16px;font-size:.78rem;color:var(--muted)}
       <div class="title">
         <div class="kicker">Une aventure Au Vieux Campeur</div>
         <h2>Les Marguerites du Vieux</h2>
-        <p>La Bise a emporté les 42 pages du carnet du Vieux. Randonnée, VTT, spéléo, escalade, trail, parapente, kayak, plongée, alpinisme, ski, snowboard : 14 étapes de la forêt à la mer, jusqu'aux glaciers.</p>
+        <p>La Bise a emporté les 51 pages du carnet du Vieux. Randonnée, VTT, spéléo, escalade, trail, parapente, kayak, plongée, alpinisme, ski, snowboard, canyoning, triathlon et pêche sous-marine : 17 étapes de la forêt à la mer, jusqu'aux glaciers.</p>
         <div class="actions">
           <button id="tPlay">Commencer l'aventure →</button>
           <button id="tNew" class="ghost" hidden>Nouvelle partie</button>
